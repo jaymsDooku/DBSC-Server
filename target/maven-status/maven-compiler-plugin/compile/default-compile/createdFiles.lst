@@ -1,0 +1,6 @@
+io\jayms\dbsc\server\model\ConnectionSpecEntity.class
+io\jayms\dbsc\server\ApplicationConfig.class
+io\jayms\dbsc\server\repository\ConnectionSpecRepositoryImpl.class
+io\jayms\dbsc\server\model\DatabaseEntity.class
+io\jayms\dbsc\server\model\ReportEntity.class
+io\jayms\dbsc\server\service\ConnectionSpecEndpoint.class
