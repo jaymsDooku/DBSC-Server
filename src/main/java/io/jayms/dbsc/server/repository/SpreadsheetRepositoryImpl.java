@@ -4,51 +4,68 @@ import io.jayms.dbsc.interfaces.model.Report;
 import io.jayms.dbsc.interfaces.model.Spreadsheet;
 import io.jayms.dbsc.interfaces.repository.SpreadsheetRepository;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceUnit;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.persistence.*;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import javax.transaction.Transactional;
+import javax.transaction.Transactional.TxType;
 import java.util.List;
 
+@ApplicationScoped
 public class SpreadsheetRepositoryImpl implements SpreadsheetRepository {
 
+    public SpreadsheetRepositoryImpl() {
+    }
+
     @PersistenceUnit(unitName = "dbsc")
-    private EntityManager em;
+    private EntityManagerFactory emf;
 
     @Override
-    public void create(Spreadsheet report) {
-        em.persist(report);
+    @Transactional(TxType.REQUIRED)
+    public void create(Spreadsheet spreadsheet) {
+        EntityManager em = emf.createEntityManager();
+        em.persist(spreadsheet);
+        em.close();
     }
 
     @Override
-    public void update(Spreadsheet report) {
-        em.merge(report);
+    @Transactional(TxType.REQUIRED)
+    public void update(Spreadsheet spreadsheet) {
+        EntityManager em = emf.createEntityManager();
+        em.merge(spreadsheet);
+        em.close();
     }
 
     @Override
     public Spreadsheet find(long id) {
-        return em.find(Spreadsheet.class, id);
+        EntityManager em = emf.createEntityManager();
+        Spreadsheet spreadsheet = em.find(Spreadsheet.class, id);
+        em.close();
+        return spreadsheet;
     }
 
     @Override
     public List<Spreadsheet> findAll(long databaseId) {
+        EntityManager em = emf.createEntityManager();
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<Spreadsheet> query = builder.createQuery(Spreadsheet.class);
 
         Root<Spreadsheet> root = query.from(Spreadsheet.class);
         CriteriaQuery<Spreadsheet> allReport = query.select(root)
-                .where(builder.equal(root.get("report_id"), databaseId));
+                .where(builder.equal(root.get("report").get("id"), databaseId));
 
         TypedQuery<Spreadsheet> allReportQuery = em.createQuery(allReport);
+        em.close();
         return allReportQuery.getResultList();
     }
 
     @Override
     public List<Spreadsheet> findAll() {
+        EntityManager em = emf.createEntityManager();
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<Spreadsheet> query = builder.createQuery(Spreadsheet.class);
 
@@ -56,11 +73,14 @@ public class SpreadsheetRepositoryImpl implements SpreadsheetRepository {
         CriteriaQuery<Spreadsheet> all = query.select(root);
 
         TypedQuery<Spreadsheet> allQuery = em.createQuery(query);
+        em.close();
         return allQuery.getResultList();
     }
 
     @Override
+    @Transactional(TxType.REQUIRED)
     public void delete(long id) {
+        EntityManager em = emf.createEntityManager();
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaDelete<Spreadsheet> criteriaDelete = builder.createCriteriaDelete(Spreadsheet.class);
 
@@ -69,6 +89,7 @@ public class SpreadsheetRepositoryImpl implements SpreadsheetRepository {
 
         Query query = em.createQuery(criteriaDelete);
         query.executeUpdate();
+        em.close();
     }
 
 }

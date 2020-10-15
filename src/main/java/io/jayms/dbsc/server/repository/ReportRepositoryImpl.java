@@ -4,27 +4,33 @@ import io.jayms.dbsc.interfaces.model.Database;
 import io.jayms.dbsc.interfaces.model.Report;
 import io.jayms.dbsc.interfaces.repository.ReportRepository;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceUnit;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
+import javax.enterprise.context.ApplicationScoped;
+import javax.persistence.*;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import javax.transaction.Transactional;
+import javax.transaction.Transactional.TxType;
 import java.util.List;
 
+@ApplicationScoped
 public class ReportRepositoryImpl implements ReportRepository {
 
-    @PersistenceUnit(unitName = "dbsc")
+    public ReportRepositoryImpl() {
+    }
+
+    @PersistenceContext(unitName = "dbsc")
     private EntityManager em;
 
     @Override
+    @Transactional(TxType.REQUIRED)
     public void create(Report report) {
         em.persist(report);
     }
 
     @Override
+    @Transactional(TxType.REQUIRED)
     public void update(Report report) {
         em.merge(report);
     }
@@ -41,7 +47,7 @@ public class ReportRepositoryImpl implements ReportRepository {
 
         Root<Report> root = query.from(Report.class);
         CriteriaQuery<Report> allReport = query.select(root)
-                .where(builder.equal(root.get("database_id"), databaseId));
+                .where(builder.equal(root.get("database").get("id"), databaseId));
 
         TypedQuery<Report> allReportQuery = em.createQuery(allReport);
         return allReportQuery.getResultList();
@@ -60,6 +66,7 @@ public class ReportRepositoryImpl implements ReportRepository {
     }
 
     @Override
+    @Transactional(TxType.REQUIRED)
     public void delete(long id) {
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaDelete<Report> criteriaDelete = builder.createCriteriaDelete(Report.class);

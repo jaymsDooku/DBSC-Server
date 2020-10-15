@@ -4,8 +4,7 @@ import io.jayms.dbsc.interfaces.model.Database;
 import io.jayms.dbsc.interfaces.model.Report;
 import io.jayms.dbsc.interfaces.model.Spreadsheet;
 import io.jayms.dbsc.interfaces.spreadsheet.SpreadsheetGenerator;
-import io.jayms.dbsc.server.model.SpreadsheetEntity;
-import io.jayms.dbsc.server.service.DatabaseEndpoint;
+import org.apache.poi.EmptyFileException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.RichTextString;
@@ -13,6 +12,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import javax.ejb.Asynchronous;
+import javax.ejb.Stateless;
 import javax.ws.rs.NotFoundException;
 import java.io.*;
 import java.sql.*;
@@ -23,9 +24,10 @@ import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+@Stateless
 public class BasicSpreadsheetGenerator implements SpreadsheetGenerator {
 
-    private static final Logger LOG = Logger.getLogger(BasicSpreadsheetGenerator.class.getName());
+    //private static final Logger LOG = Logger.getLogger(BasicSpreadsheetGenerator.class.getName());
     private static final DateFormat formatter = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss");
 
     @Override
@@ -33,7 +35,7 @@ public class BasicSpreadsheetGenerator implements SpreadsheetGenerator {
         String query = report.getQuery();
         Database database = report.getDatabase();
         try {
-            Connection connection = database.getConnection();
+            Connection connection = database.connection();
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -46,15 +48,21 @@ public class BasicSpreadsheetGenerator implements SpreadsheetGenerator {
             String reportName = report.getName();
             String spreadsheetName = reportName + "_" + formattedDate;
             File workbookFile = new File(destination, spreadsheetName + ".xlsx");
+
             FileInputStream workbookInput = getFileInputStream(workbookFile);
 
             String location = workbookFile.getPath();
-            Spreadsheet spreadsheet = new SpreadsheetEntity();
+            Spreadsheet spreadsheet = new Spreadsheet();
             spreadsheet.setLocation(location);
             spreadsheet.setCreation(instant);
             spreadsheet.setReport(report);
 
-            XSSFWorkbook workbook = new XSSFWorkbook(workbookInput);
+            XSSFWorkbook workbook;
+            try {
+                workbook = new XSSFWorkbook(workbookInput);
+            } catch (EmptyFileException ex) {
+                workbook = new XSSFWorkbook();
+            }
             CreationHelper creationHelper = workbook.getCreationHelper();
 
             XSSFSheet sheet = workbook.createSheet();
@@ -103,7 +111,7 @@ public class BasicSpreadsheetGenerator implements SpreadsheetGenerator {
                 parentFile.mkdirs();
             }
             if (file.createNewFile()) {
-                LOG.log(Level.FINE, "Created new workbook file at: {0}", file.getPath());
+                System.out.println("Created new workbook file at: " + file.getPath());
             }
         }
         return new FileInputStream(file);

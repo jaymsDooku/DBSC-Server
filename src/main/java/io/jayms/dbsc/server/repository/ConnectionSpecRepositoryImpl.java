@@ -3,6 +3,7 @@ package io.jayms.dbsc.server.repository;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
@@ -11,22 +12,29 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import javax.transaction.Transactional;
+import javax.transaction.Transactional.TxType;
 
 import io.jayms.dbsc.interfaces.model.ConnectionSpec;
 import io.jayms.dbsc.interfaces.repository.ConnectionSpecRepository;
-import io.jayms.dbsc.server.model.ConnectionSpecEntity;
 
+@ApplicationScoped
 public class ConnectionSpecRepositoryImpl implements ConnectionSpecRepository {
+
+	public ConnectionSpecRepositoryImpl() {
+	}
 
 	@PersistenceContext(unitName = "dbsc")
 	private EntityManager em;
 
 	@Override
+	@Transactional(TxType.REQUIRED)
 	public void create(ConnectionSpec connSpec) {
 		em.persist(connSpec);
 	}
 
 	@Override
+	@Transactional(TxType.REQUIRED)
 	public ConnectionSpec update(ConnectionSpec connSpec) {
 		return em.merge(connSpec);
 	}
@@ -47,6 +55,7 @@ public class ConnectionSpecRepositoryImpl implements ConnectionSpecRepository {
 	}
 	
 	@Override
+	@Transactional(TxType.REQUIRED)
 	public void delete(long id) {
 		CriteriaBuilder builder = em.getCriteriaBuilder();
 		CriteriaDelete<ConnectionSpec> criteriaDelete = builder.createCriteriaDelete(ConnectionSpec.class);
